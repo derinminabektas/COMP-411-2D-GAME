@@ -8,22 +8,24 @@ function Boss.create(x, y)
     local self = setmetatable({}, Boss)
     self.x = x
     self.y = y
-    
     self.width = Boss.imgOpen:getWidth()
     self.height = Boss.imgOpen:getHeight()
-    
     self.health = 10
     self.phase = 1
     self.dead = false
-    
     self.speed = 30
     self.moveDir = -1 
     self.fireTimer = 0
     self.fireRate = 2.5
-    
     self.animTimer = 0
     self.animFrame = 1
     
+    self.startY = y
+    self.dy = 0
+    self.gravity = 800
+    self.jumpForce = -300
+    self.isGrounded = true
+
     return self
 end
 
@@ -34,7 +36,6 @@ function Boss:update(dt, player, bullets)
     self:movePattern(dt, player)
     self:attackPattern(dt, player, bullets)
     
-   
     self.animTimer = self.animTimer + dt
     local flapSpeed = self.phase == 1 and 0.3 or 0.15
     
@@ -56,10 +57,24 @@ function Boss:checkPhase()
 end
 
 function Boss:movePattern(dt, player)
+    self.dy = self.dy + self.gravity * dt
+    self.y = self.y + self.dy * dt
+
+    if self.y >= self.startY then
+        self.y = self.startY
+        self.dy = 0
+        self.isGrounded = true
+    end
+
     local dist = math.abs(player.x - self.x)
     if dist < 60 then
         local escapeDir = (self.x < player.x) and -1 or 1
         self.x = self.x + (escapeDir * self.speed * 4 * dt)
+        
+        if self.isGrounded then
+            self.dy = self.jumpForce
+            self.isGrounded = false
+        end
     else
         self.x = self.x + (self.speed * self.moveDir * dt)
         if self.x < 150 then
